@@ -1,191 +1,214 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Analisador de Fita de Borda</title>
-    <!-- Carrega o Tailwind CSS para estilização -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Configuração do Tailwind para usar a fonte Inter e cores personalizadas -->
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                    },
-                    colors: {
-                        primary: '#10b981', // Verde Esmeralda (Principal)
-                        secondary: '#1f2937', // Cinza/Azul Escuro (Texto/Fundo Contraste)
-                        accent: '#3b82f6', // Azul (Destaque)
-                        background: '#eef2f6', // Cinza Claro (Fundo Principal)
-                        save: '#f97316', // Laranja (Para o botão Salvar)
-                    }
-                }
-            }
-        }
-    </script>
-    <style>
-        /* Estilos adicionais para o textarea e layout */
-        .card {
-            /* Sombra mais suave para um look sofisticado */
-            box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-            transition: all 0.3s ease;
-        }
-        .input-field {
-            /* Estilo padrão para campos de entrada */
-            @apply w-full p-3 border border-gray-300 rounded-lg focus:ring-accent focus:border-accent transition duration-150 text-base;
-        }
-        /* Ajuste para garantir que o texto de entrada não seja cortado */
-        textarea.input-field {
-            resize: vertical;
-        }
-        .loader {
-            border: 4px solid rgba(0, 0, 0, 0.1);
-            border-left-color: #f97316;
-            border-radius: 50%;
-            width: 20px;
-            height: 20px;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fita de Bordo - Analisador</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f3f4f6;
+      margin: 0;
+      padding: 20px;
+      color: #333;
+    }
+
+    h1 {
+      text-align: center;
+      color: #222;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    label {
+      display: block;
+      margin-top: 10px;
+      font-weight: bold;
+    }
+
+    input, textarea {
+      width: 100%;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      margin-top: 5px;
+      box-sizing: border-box;
+    }
+
+    textarea {
+      height: 150px;
+      resize: vertical;
+    }
+
+    button {
+      background: #2563eb;
+      color: #fff;
+      padding: 10px 16px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 15px;
+      font-size: 15px;
+    }
+
+    button:hover {
+      background: #1e40af;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    #resultsContainer {
+      margin-top: 25px;
+      background: #f9fafb;
+      padding: 15px;
+      border-radius: 8px;
+      border: 1px solid #ddd;
+    }
+
+    #projectInfo {
+      margin-bottom: 10px;
+      line-height: 1.5;
+    }
+
+    .line {
+      padding: 6px 0;
+      border-bottom: 1px dashed #ccc;
+    }
+
+    .success {
+      background: #ecfdf5;
+      color: #065f46;
+      padding: 10px;
+      border-radius: 8px;
+      margin-top: 10px;
+    }
+
+    .error {
+      background: #fef2f2;
+      color: #991b1b;
+      padding: 10px;
+      border-radius: 8px;
+      margin-top: 10px;
+    }
+  </style>
 </head>
-<body class="bg-background min-h-screen flex flex-col items-center p-4 font-sans text-secondary">
 
-    <div class="w-full max-w-4xl space-y-8 mt-4">
+<body>
+  <h1>🔹 Analisador de Metragem - Fita de Bordo</h1>
 
-        <header class="text-center py-4">
-            <h1 class="text-4xl font-extrabold text-secondary tracking-tight">Análise de Fita de Bordo</h1>
-            <p class="text-lg text-gray-500 mt-2">Gere a lista de compras e salve no banco de dados.</p>
-        </header>
+  <div class="container">
+    <label for="clientName">Nome do Cliente:</label>
+    <input type="text" id="clientName" placeholder="Ex: João da Silva" />
 
-        <!-- Área de Colar Dados e Metadados -->
-        <div class="card bg-white p-8 rounded-xl">
-            <h2 class="text-2xl font-bold text-secondary mb-6 border-b pb-2">1. Informações e Dados</h2>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                <div>
-                    <label for="clientName" class="block text-sm font-medium text-gray-700 mb-1">Nome do Cliente</label>
-                    <input type="text" id="clientName" placeholder="Ex: Maria da Silva" class="input-field">
-                </div>
-                <div>
-                    <label for="environment" class="block text-sm font-medium text-gray-700 mb-1">Ambiente</label>
-                    <input type="text" id="environment" placeholder="Ex: Cozinha Gourmet" class="input-field">
-                </div>
-            </div>
+    <label for="environment">Ambiente:</label>
+    <input type="text" id="environment" placeholder="Ex: Cozinha / Quarto / Sala" />
 
-            <label for="inputData" class="block text-sm font-medium text-gray-700 mb-2">Cole os Dados da Metragem</label>
-            <textarea id="inputData" rows="10" placeholder="Cole todo o conteúdo do seu bloco de notas aqui (incluindo o cabeçalho INDICE, CODIGO, NOME, METRAGEM_TOTAL(M))."
-                class="input-field text-sm font-mono"></textarea>
-            
-            <button onclick="analyzeData()" id="analyzeButton"
-                class="mt-6 w-full px-6 py-3 bg-primary text-white font-bold text-lg rounded-xl shadow-lg shadow-primary/50 hover:bg-emerald-600 transition duration-300 transform hover:scale-[1.01] focus:outline-none focus:ring-4 focus:ring-primary focus:ring-opacity-50">
-                Analisar Metragem
-            </button>
-        </div>
+    <label for="inputData">Informe as medidas:</label>
+    <textarea id="inputData" placeholder="Exemplo:&#10;500 x 500&#10;1200 x 600"></textarea>
 
-        <!-- Área de Resultados -->
-        <div id="resultsContainer" class="card bg-white p-8 rounded-xl hidden">
-            <h2 class="text-2xl font-bold text-secondary mb-4 border-b pb-2">2. Resultado da Análise</h2>
-            
-            <!-- Informações do Projeto (Cliente/Ambiente) -->
-            <div id="projectInfo" class="text-lg mb-6 p-4 bg-gray-100 rounded-lg">
-                <!-- Informações do projeto serão inseridas aqui -->
-            </div>
+    <button onclick="analyzeData()">📏 Analisar Metragem</button>
 
-            <div id="summaryTableContainer" class="mb-8">
-                <!-- Tabela de resumo geral será inserida aqui -->
-            </div>
-
-            <h3 class="text-xl font-bold text-secondary mb-3 mt-6">Lista de Compras (FB = Fita de Bordo, RL = Rolo)</h3>
-            <div id="detailResults" class="space-y-3 bg-white p-4 border border-gray-200 rounded-lg">
-                <!-- Detalhes por material e fita serão inseridos aqui -->
-            </div>
-            
-            <div id="errorMessage" class="hidden mt-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg font-medium" role="alert">
-                <!-- Mensagens de erro serão exibidas aqui -->
-            </div>
-            
-            <!-- Botão de Salvar no Firebase -->
-            <button onclick="saveToFirebase()" id="saveButton"
-                class="mt-8 w-full px-6 py-3 bg-save text-white font-bold text-lg rounded-xl shadow-lg shadow-save/50 hover:bg-orange-600 transition duration-300 transform hover:scale-[1.01] focus:outline-none focus:ring-4 focus:ring-save focus:ring-opacity-50 flex items-center justify-center">
-                💾 Salvar Análise no Banco de Dados
-            </button>
-            <div id="saveMessage" class="hidden mt-4 p-3 text-center bg-gray-100 rounded-lg font-medium"></div>
-
-        </div>
-
-        <!-- Área de Histórico -->
-        <div class="card bg-white p-8 rounded-xl">
-            <h2 class="text-2xl font-bold text-secondary mb-6 border-b pb-2">3. Histórico de Análises Salvas</h2>
-            <div id="historyResults" class="space-y-3">
-                <!-- O histórico será carregado aqui -->
-                <p class="text-center text-gray-500 py-4">Aguardando autenticação para carregar o histórico...</p>
-            </div>
-        </div>
-        
+    <div id="resultsContainer" class="hidden">
+      <div id="projectInfo"></div>
+      <div id="detailResults"></div>
+      <button onclick="saveToFirebase()">💾 Salvar no Firebase</button>
+      <div id="feedback"></div>
     </div>
+  </div>
 
-    <!-- Script de Inicialização do Firebase e Lógica da Aplicação -->
-    <script type="module">
-        // Importa as funções do Firebase (modular V9)
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, serverTimestamp, query, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // --- Variáveis Globais de Ambiente e Firebase (Obrigatório) ---
-        // As credenciais de configuração são passadas via variável global no ambiente.
-        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+    // 🔹 Configuração do Firebase (do seu projeto)
+    const firebaseConfig = {
+      apiKey: "AIzaSyAwIMghiPwqZjRnByGfa8vXtQ59RQFsjTQ",
+      authDomain: "fita-de-bordo.firebaseapp.com",
+      projectId: "fita-de-bordo",
+      storageBucket: "fita-de-bordo.appspot.com",
+      messagingSenderId: "678430661085",
+      appId: "1:678430661085:web:da464f94557a9086edc5c4",
+      measurementId: "G-88G9CPRPZK"
+    };
 
-        // Inicializa o Firebase e serviços
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const auth = getAuth(app);
-        
-        // setLogLevel('Debug'); // Descomente para ver logs detalhados do Firebase
-        
-        // Variáveis de estado da aplicação
-        let currentUserId = null;
-        let dbInstance = null; // Instância do Firestore
-        let lastAnalysisResult = null; // Armazena o último resultado para salvar
+    // 🔹 Inicializa Firebase
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
 
-        // --- 1. Autenticação e Inicialização ---
-        onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                currentUserId = user.uid;
-                dbInstance = db;
-                console.log("Usuário autenticado:", currentUserId);
-                // CHAMA O CARREGAMENTO DO HISTÓRICO APÓS AUTENTICAÇÃO
-                loadHistory(); 
-            } else {
-                currentUserId = null;
-                dbInstance = null;
-                console.log("Usuário deslogado. Tentando login...");
-            }
-            
-            // Se não estiver autenticado (primeira carga ou deslogado), tenta o login automático
-            if (!auth.currentUser) {
-                try {
-                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                        await signInWithCustomToken(auth, __initial_auth_token);
-                    } else {
-                        await signInAnonymously(auth);
-                    }
-                } catch (error) {
-                    console.error("Erro na autenticação:", error);
-                    // O app continua a rodar, mas sem salvar no DB
-                }
-            }
+    let currentUserId = null;
+
+    // 🔹 Login anônimo
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        currentUserId = user.uid;
+        console.log("Usuário autenticado:", currentUserId);
+      } else {
+        await signInAnonymously(auth);
+      }
+    });
+
+    // 🔹 Função de análise de metragem
+    window.analyzeData = function () {
+      const clientName = document.getElementById("clientName").value.trim();
+      const environment = document.getElementById("environment").value.trim();
+      const inputData = document.getElementById("inputData").value.trim();
+      const feedback = document.getElementById("feedback");
+
+      if (!clientName || !environment || !inputData) {
+        feedback.innerHTML = `<div class="error">⚠️ Preencha todos os campos antes de analisar!</div>`;
+        return;
+      }
+
+      const linhas = inputData.split("\n").filter(l => l.trim() !== "");
+      const total = linhas.length;
+
+      const resultsContainer = document.getElementById("resultsContainer");
+      const projectInfo = document.getElementById("projectInfo");
+      const detailResults = document.getElementById("detailResults");
+
+      projectInfo.innerHTML = `<b>Cliente:</b> ${clientName}<br><b>Ambiente:</b> ${environment}<br><b>Linhas analisadas:</b> ${total}`;
+      detailResults.innerHTML = linhas.map(l => `<div class="line">${l}</div>`).join("");
+      resultsContainer.classList.remove("hidden");
+      feedback.innerHTML = "";
+    };
+
+    // 🔹 Salvar no Firebase
+    window.saveToFirebase = async function () {
+      const clientName = document.getElementById("clientName").value.trim();
+      const environment = document.getElementById("environment").value.trim();
+      const inputData = document.getElementById("inputData").value.trim();
+      const feedback = document.getElementById("feedback");
+
+      if (!currentUserId) {
+        feedback.innerHTML = `<div class="error">Aguardando autenticação. Tente novamente em alguns segundos.</div>`;
+        return;
+      }
+
+      try {
+        await addDoc(collection(db, "analises"), {
+          cliente: clientName,
+          ambiente: environment,
+          dados: inputData,
+          criadoEm: serverTimestamp(),
+          uid: currentUserId
         });
-
-        // --- Constantes e Funções Utilitárias ---
-        const ROLLO_METERS = 20; // Metros por rolo de fita (20m)
-        const FITA_22MM = '22MM';
-        const FITA_64MM = '64MM';
-        
-        const calculateRolls = (totalMeters) => {
-            return Math.ceil(totalMeters / ROLLO_
+        feedback.innerHTML = `<div class="success">✅ Análise salva com sucesso no Firebase!</div>`;
+      } catch (error) {
+        console.error("Erro ao salvar:", error);
+        feedback.innerHTML = `<div class="error">❌ Erro ao salvar a análise.</div>`;
+      }
+    };
+  </script>
+</body>
+</html>
