@@ -1,214 +1,239 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Fita de Bordo - Analisador</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f3f4f6;
-      margin: 0;
-      padding: 20px;
-      color: #333;
-    }
-
-    h1 {
-      text-align: center;
-      color: #222;
-    }
-
-    .container {
-      max-width: 800px;
-      margin: 0 auto;
-      background: #fff;
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    }
-
-    label {
-      display: block;
-      margin-top: 10px;
-      font-weight: bold;
-    }
-
-    input, textarea {
-      width: 100%;
-      padding: 10px;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-      margin-top: 5px;
-      box-sizing: border-box;
-    }
-
-    textarea {
-      height: 150px;
-      resize: vertical;
-    }
-
-    button {
-      background: #2563eb;
-      color: #fff;
-      padding: 10px 16px;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      margin-top: 15px;
-      font-size: 15px;
-    }
-
-    button:hover {
-      background: #1e40af;
-    }
-
-    .hidden {
-      display: none;
-    }
-
-    #resultsContainer {
-      margin-top: 25px;
-      background: #f9fafb;
-      padding: 15px;
-      border-radius: 8px;
-      border: 1px solid #ddd;
-    }
-
-    #projectInfo {
-      margin-bottom: 10px;
-      line-height: 1.5;
-    }
-
-    .line {
-      padding: 6px 0;
-      border-bottom: 1px dashed #ccc;
-    }
-
-    .success {
-      background: #ecfdf5;
-      color: #065f46;
-      padding: 10px;
-      border-radius: 8px;
-      margin-top: 10px;
-    }
-
-    .error {
-      background: #fef2f2;
-      color: #991b1b;
-      padding: 10px;
-      border-radius: 8px;
-      margin-top: 10px;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analisador de Fita de Borda</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        primary: '#10b981',
+                        secondary: '#1f2937',
+                        accent: '#3b82f6',
+                        background: '#eef2f6',
+                        save: '#f97316',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .card {
+            box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.1),
+                        0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+        .input-field {
+            @apply w-full p-3 border border-gray-300 rounded-lg focus:ring-accent focus:border-accent transition duration-150 text-base;
+        }
+        textarea.input-field {
+            resize: vertical;
+        }
+        .loader {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left-color: #f97316;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
 </head>
+<body class="bg-background min-h-screen flex flex-col items-center p-4 font-sans text-secondary">
 
-<body>
-  <h1>🔹 Analisador de Metragem - Fita de Bordo</h1>
+    <div class="w-full max-w-4xl space-y-8 mt-4">
 
-  <div class="container">
-    <label for="clientName">Nome do Cliente:</label>
-    <input type="text" id="clientName" placeholder="Ex: João da Silva" />
+        <header class="text-center py-4">
+            <h1 class="text-4xl font-extrabold text-secondary tracking-tight">Análise de Fita de Bordo</h1>
+            <p class="text-lg text-gray-500 mt-2">Gere a lista de compras e salve no banco de dados.</p>
+        </header>
 
-    <label for="environment">Ambiente:</label>
-    <input type="text" id="environment" placeholder="Ex: Cozinha / Quarto / Sala" />
+        <!-- 1. Dados -->
+        <div class="card bg-white p-8 rounded-xl">
+            <h2 class="text-2xl font-bold text-secondary mb-6 border-b pb-2">1. Informações e Dados</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div>
+                    <label for="clientName" class="block text-sm font-medium text-gray-700 mb-1">Nome do Cliente</label>
+                    <input type="text" id="clientName" placeholder="Ex: Maria da Silva" class="input-field">
+                </div>
+                <div>
+                    <label for="environment" class="block text-sm font-medium text-gray-700 mb-1">Ambiente</label>
+                    <input type="text" id="environment" placeholder="Ex: Cozinha Gourmet" class="input-field">
+                </div>
+            </div>
 
-    <label for="inputData">Informe as medidas:</label>
-    <textarea id="inputData" placeholder="Exemplo:&#10;500 x 500&#10;1200 x 600"></textarea>
+            <label for="inputData" class="block text-sm font-medium text-gray-700 mb-2">Cole os Dados da Metragem</label>
+            <textarea id="inputData" rows="10" placeholder="Cole o conteúdo do bloco de notas (com INDICE, CODIGO, NOME, METRAGEM_TOTAL(M))."
+                class="input-field text-sm font-mono"></textarea>
+            
+            <button onclick="analyzeData()" id="analyzeButton"
+                class="mt-6 w-full px-6 py-3 bg-primary text-white font-bold text-lg rounded-xl shadow-lg shadow-primary/50 hover:bg-emerald-600 transition duration-300 transform hover:scale-[1.01] focus:outline-none focus:ring-4 focus:ring-primary focus:ring-opacity-50">
+                Analisar Metragem
+            </button>
+        </div>
 
-    <button onclick="analyzeData()">📏 Analisar Metragem</button>
+        <!-- 2. Resultados -->
+        <div id="resultsContainer" class="card bg-white p-8 rounded-xl hidden">
+            <h2 class="text-2xl font-bold text-secondary mb-4 border-b pb-2">2. Resultado da Análise</h2>
+            <div id="projectInfo" class="text-lg mb-6 p-4 bg-gray-100 rounded-lg"></div>
+            <div id="detailResults" class="space-y-3 bg-white p-4 border border-gray-200 rounded-lg"></div>
+            <div id="errorMessage" class="hidden mt-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg font-medium" role="alert"></div>
 
-    <div id="resultsContainer" class="hidden">
-      <div id="projectInfo"></div>
-      <div id="detailResults"></div>
-      <button onclick="saveToFirebase()">💾 Salvar no Firebase</button>
-      <div id="feedback"></div>
+            <button onclick="saveToFirebase()" id="saveButton"
+                class="mt-8 w-full px-6 py-3 bg-save text-white font-bold text-lg rounded-xl shadow-lg shadow-save/50 hover:bg-orange-600 transition duration-300 transform hover:scale-[1.01] focus:outline-none focus:ring-4 focus:ring-save focus:ring-opacity-50 flex items-center justify-center">
+                💾 Salvar Análise no Banco de Dados
+            </button>
+            <div id="saveMessage" class="hidden mt-4 p-3 text-center bg-gray-100 rounded-lg font-medium"></div>
+        </div>
+
+        <!-- 3. Histórico -->
+        <div class="card bg-white p-8 rounded-xl">
+            <h2 class="text-2xl font-bold text-secondary mb-6 border-b pb-2">3. Histórico de Análises Salvas</h2>
+            <div id="historyResults" class="space-y-3">
+                <p class="text-center text-gray-500 py-4">Aguardando autenticação...</p>
+            </div>
+        </div>
+        
     </div>
-  </div>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    <!-- Script -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, serverTimestamp, query, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-    // 🔹 Configuração do Firebase (do seu projeto)
-    const firebaseConfig = {
-      apiKey: "AIzaSyAwIMghiPwqZjRnByGfa8vXtQ59RQFsjTQ",
-      authDomain: "fita-de-bordo.firebaseapp.com",
-      projectId: "fita-de-bordo",
-      storageBucket: "fita-de-bordo.appspot.com",
-      messagingSenderId: "678430661085",
-      appId: "1:678430661085:web:da464f94557a9086edc5c4",
-      measurementId: "G-88G9CPRPZK"
-    };
+        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
 
-    // 🔹 Inicializa Firebase
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-    const auth = getAuth(app);
+        let currentUserId = null;
+        let dbInstance = null;
+        let lastAnalysisResult = null;
 
-    let currentUserId = null;
-
-    // 🔹 Login anônimo
-    onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        currentUserId = user.uid;
-        console.log("Usuário autenticado:", currentUserId);
-      } else {
-        await signInAnonymously(auth);
-      }
-    });
-
-    // 🔹 Função de análise de metragem
-    window.analyzeData = function () {
-      const clientName = document.getElementById("clientName").value.trim();
-      const environment = document.getElementById("environment").value.trim();
-      const inputData = document.getElementById("inputData").value.trim();
-      const feedback = document.getElementById("feedback");
-
-      if (!clientName || !environment || !inputData) {
-        feedback.innerHTML = `<div class="error">⚠️ Preencha todos os campos antes de analisar!</div>`;
-        return;
-      }
-
-      const linhas = inputData.split("\n").filter(l => l.trim() !== "");
-      const total = linhas.length;
-
-      const resultsContainer = document.getElementById("resultsContainer");
-      const projectInfo = document.getElementById("projectInfo");
-      const detailResults = document.getElementById("detailResults");
-
-      projectInfo.innerHTML = `<b>Cliente:</b> ${clientName}<br><b>Ambiente:</b> ${environment}<br><b>Linhas analisadas:</b> ${total}`;
-      detailResults.innerHTML = linhas.map(l => `<div class="line">${l}</div>`).join("");
-      resultsContainer.classList.remove("hidden");
-      feedback.innerHTML = "";
-    };
-
-    // 🔹 Salvar no Firebase
-    window.saveToFirebase = async function () {
-      const clientName = document.getElementById("clientName").value.trim();
-      const environment = document.getElementById("environment").value.trim();
-      const inputData = document.getElementById("inputData").value.trim();
-      const feedback = document.getElementById("feedback");
-
-      if (!currentUserId) {
-        feedback.innerHTML = `<div class="error">Aguardando autenticação. Tente novamente em alguns segundos.</div>`;
-        return;
-      }
-
-      try {
-        await addDoc(collection(db, "analises"), {
-          cliente: clientName,
-          ambiente: environment,
-          dados: inputData,
-          criadoEm: serverTimestamp(),
-          uid: currentUserId
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                currentUserId = user.uid;
+                dbInstance = db;
+                loadHistory();
+            } else {
+                await signInAnonymously(auth);
+            }
         });
-        feedback.innerHTML = `<div class="success">✅ Análise salva com sucesso no Firebase!</div>`;
-      } catch (error) {
-        console.error("Erro ao salvar:", error);
-        feedback.innerHTML = `<div class="error">❌ Erro ao salvar a análise.</div>`;
-      }
-    };
-  </script>
+
+        const ROLLO_METERS = 20;
+
+        // Função principal
+        window.analyzeData = function() {
+            const inputData = document.getElementById('inputData').value.trim();
+            const clientName = document.getElementById('clientName').value.trim();
+            const environment = document.getElementById('environment').value.trim();
+            const resultsContainer = document.getElementById('resultsContainer');
+            const detailResults = document.getElementById('detailResults');
+            const projectInfo = document.getElementById('projectInfo');
+            const errorMessage = document.getElementById('errorMessage');
+
+            detailResults.innerHTML = "";
+            errorMessage.classList.add("hidden");
+
+            if (!inputData) {
+                errorMessage.textContent = "Por favor, cole os dados da metragem.";
+                errorMessage.classList.remove("hidden");
+                return;
+            }
+
+            const lines = inputData.split("\n").filter(l => l.trim() && !l.includes("INDICE"));
+            const results = [];
+
+            lines.forEach(line => {
+                const parts = line.split("|").map(p => p.trim());
+                if (parts.length >= 4) {
+                    const name = parts[2];
+                    const total = parseFloat(parts[3].replace(",", "."));
+                    if (!isNaN(total)) {
+                        const type = name.toUpperCase().includes("64") ? "64MM" :
+                                     name.toUpperCase().includes("22") ? "22MM" : null;
+                        if (type) results.push({ name, type, total });
+                    }
+                }
+            });
+
+            if (results.length === 0) {
+                errorMessage.textContent = "Nenhuma fita válida encontrada.";
+                errorMessage.classList.remove("hidden");
+                return;
+            }
+
+            const grouped = {};
+            results.forEach(item => {
+                const key = item.type + "|" + item.name;
+                grouped[key] = (grouped[key] || 0) + item.total;
+            });
+
+            const output = Object.entries(grouped).map(([key, total]) => {
+                const [type, name] = key.split("|");
+                const rolls = Math.ceil(total / ROLLO_METERS);
+                return `FB ${type} ${name.replace(type, "").trim()} - ${rolls}RL`;
+            });
+
+            projectInfo.innerHTML = `<strong>Cliente:</strong> ${clientName || "Não informado"}<br>
+                                     <strong>Ambiente:</strong> ${environment || "Não informado"}<br>
+                                     <strong>Data:</strong> ${new Date().toLocaleDateString("pt-BR")}`;
+            
+            detailResults.innerHTML = output.map(r => `<div class="p-3 bg-gray-50 border rounded-lg">${r}</div>`).join("");
+            resultsContainer.classList.remove("hidden");
+
+            lastAnalysisResult = output;
+        }
+
+        async function saveToFirebase() {
+            if (!dbInstance || !currentUserId || !lastAnalysisResult) return;
+            const clientName = document.getElementById('clientName').value.trim() || "Sem nome";
+            const environment = document.getElementById('environment').value.trim() || "Sem ambiente";
+            const inputData = document.getElementById('inputData').value.trim();
+
+            await addDoc(collection(dbInstance, "analises"), {
+                uid: currentUserId,
+                clientName,
+                environment,
+                inputData,
+                result: lastAnalysisResult,
+                createdAt: serverTimestamp(),
+            });
+
+            const saveMessage = document.getElementById('saveMessage');
+            saveMessage.textContent = "✅ Análise salva com sucesso!";
+            saveMessage.classList.remove("hidden");
+        }
+
+        async function loadHistory() {
+            if (!dbInstance) return;
+            const historyResults = document.getElementById("historyResults");
+            const q = query(collection(dbInstance, "analises"));
+            onSnapshot(q, (snapshot) => {
+                historyResults.innerHTML = "";
+                snapshot.forEach((doc) => {
+                    const data = doc.data();
+                    historyResults.innerHTML += `
+                        <div class="p-4 border rounded-lg bg-gray-50">
+                            <strong>${data.clientName}</strong> — ${data.environment}<br>
+                            <span class="text-sm text-gray-500">${new Date(data.createdAt?.toDate()).toLocaleDateString("pt-BR")}</span>
+                            <div class="mt-2 text-sm">${(data.result || []).join("<br>")}</div>
+                        </div>
+                    `;
+                });
+            });
+        }
+    </script>
 </body>
 </html>
