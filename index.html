@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analisador de Fita de Borda</title>
+    <!-- Carrega o Tailwind CSS para estilização -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Configuração do Tailwind para usar a fonte Inter e cores personalizadas -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        primary: '#10b981', // Verde Esmeralda (Principal)
+                        secondary: '#1f2937', // Cinza/Azul Escuro (Texto/Fundo Contraste)
+                        accent: '#3b82f6', // Azul (Destaque)
+                        background: '#eef2f6', // Cinza Claro (Fundo Principal)
+                        save: '#f97316', // Laranja (Para o botão Salvar)
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Estilos adicionais para o textarea e layout */
+        .card {
+            /* Sombra mais suave para um look sofisticado */
+            box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+        .input-field {
+            /* Estilo padrão para campos de entrada */
+            @apply w-full p-3 border border-gray-300 rounded-lg focus:ring-accent focus:border-accent transition duration-150 text-base;
+        }
+        /* Ajuste para garantir que o texto de entrada não seja cortado */
+        textarea.input-field {
+            resize: vertical;
+        }
+        .loader {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left-color: #f97316;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-background min-h-screen flex flex-col items-center p-4 font-sans text-secondary">
+
+    <div class="w-full max-w-4xl space-y-8 mt-4">
+
+        <header class="text-center py-4">
+            <h1 class="text-4xl font-extrabold text-secondary tracking-tight">Análise de Fita de Bordo</h1>
+            <p class="text-lg text-gray-500 mt-2">Gere a lista de compras e salve no banco de dados.</p>
+        </header>
+
+        <!-- Área de Colar Dados e Metadados -->
+        <div class="card bg-white p-8 rounded-xl">
+            <h2 class="text-2xl font-bold text-secondary mb-6 border-b pb-2">1. Informações e Dados</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div>
+                    <label for="clientName" class="block text-sm font-medium text-gray-700 mb-1">Nome do Cliente</label>
+                    <input type="text" id="clientName" placeholder="Ex: Maria da Silva" class="input-field">
+                </div>
+                <div>
+                    <label for="environment" class="block text-sm font-medium text-gray-700 mb-1">Ambiente</label>
+                    <input type="text" id="environment" placeholder="Ex: Cozinha Gourmet" class="input-field">
+                </div>
+            </div>
+
+            <label for="inputData" class="block text-sm font-medium text-gray-700 mb-2">Cole os Dados da Metragem</label>
+            <textarea id="inputData" rows="10" placeholder="Cole todo o conteúdo do seu bloco de notas aqui (incluindo o cabeçalho INDICE, CODIGO, NOME, METRAGEM_TOTAL(M))."
+                class="input-field text-sm font-mono"></textarea>
+            
+            <button onclick="analyzeData()" id="analyzeButton"
+                class="mt-6 w-full px-6 py-3 bg-primary text-white font-bold text-lg rounded-xl shadow-lg shadow-primary/50 hover:bg-emerald-600 transition duration-300 transform hover:scale-[1.01] focus:outline-none focus:ring-4 focus:ring-primary focus:ring-opacity-50">
+                Analisar Metragem
+            </button>
+        </div>
+
+        <!-- Área de Resultados -->
+        <div id="resultsContainer" class="card bg-white p-8 rounded-xl hidden">
+            <h2 class="text-2xl font-bold text-secondary mb-4 border-b pb-2">2. Resultado da Análise</h2>
+            
+            <!-- Informações do Projeto (Cliente/Ambiente) -->
+            <div id="projectInfo" class="text-lg mb-6 p-4 bg-gray-100 rounded-lg">
+                <!-- Informações do projeto serão inseridas aqui -->
+            </div>
+
+            <div id="summaryTableContainer" class="mb-8">
+                <!-- Tabela de resumo geral será inserida aqui -->
+            </div>
+
+            <h3 class="text-xl font-bold text-secondary mb-3 mt-6">Lista de Compras (FB = Fita de Bordo, RL = Rolo)</h3>
+            <div id="detailResults" class="space-y-3 bg-white p-4 border border-gray-200 rounded-lg">
+                <!-- Detalhes por material e fita serão inseridos aqui -->
+            </div>
+            
+            <div id="errorMessage" class="hidden mt-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg font-medium" role="alert">
+                <!-- Mensagens de erro serão exibidas aqui -->
+            </div>
+            
+            <!-- Botão de Salvar no Firebase -->
+            <button onclick="saveToFirebase()" id="saveButton"
+                class="mt-8 w-full px-6 py-3 bg-save text-white font-bold text-lg rounded-xl shadow-lg shadow-save/50 hover:bg-orange-600 transition duration-300 transform hover:scale-[1.01] focus:outline-none focus:ring-4 focus:ring-save focus:ring-opacity-50 flex items-center justify-center">
+                💾 Salvar Análise no Banco de Dados
+            </button>
+            <div id="saveMessage" class="hidden mt-4 p-3 text-center bg-gray-100 rounded-lg font-medium"></div>
+
+        </div>
+        
+    </div>
+
+    <!-- Script de Inicialização do Firebase e Lógica da Aplicação -->
+    <script type="module">
+        // Importa as funções do Firebase (modular V9)
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- Variáveis Globais de Ambiente e Firebase (Obrigatório) ---
+        // As credenciais de configuração são passadas via variável global no ambiente.
+        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+
+        // Inicializa o Firebase e serviços
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+        
+        // setLogLevel('Debug'); // Descomente para ver logs detalhados do Firebase
+        
+        // Variáveis de estado da aplicação
+        let currentUserId = null;
+        let dbInstance = null; // Instância do Firestore
+        let lastAnalysisResult = null; // Armazena o último resultado para salvar
+
+        // --- 1. Autenticação e Inicialização ---
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                currentUserId = user.uid;
+                dbInstance = db;
+                console.log("Usuário autenticado:", currentUserId);
+            } else {
+                currentUserId = null;
+                dbInstance = null;
+                console.log("Usuário deslogado. Tentando login...");
+            }
+            
+            // Se não estiver autenticado (primeira carga ou deslogado), tenta o login automático
+            if (!auth.currentUser) {
+                try {
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        await signInWithCustomToken(auth, __initial_auth_token);
+                    } else {
+                        await signInAnonymously(auth);
+                    }
+                } catch (error) {
+                    console.error("Erro na autenticação:", error);
+                    // O app continua a rodar, mas sem salvar no DB
+                }
+            }
+        });
+
+        // --- Constantes e Funções Utilitárias ---
+        const ROLLO_METERS = 20; // Metros por rolo de fita (20m)
+        const FITA_22MM = '22MM';
+        const FITA_64MM = '64MM';
+        
+        const calculateRolls = (totalMeters) => {
+            return Math.ceil(totalMeters / ROLLO_METERS);
+        };
+
+        function displayError(message) {
+            const errorMessage = document.getElementById('errorMessage');
+            errorMessage.textContent = 'ERRO: ' + message;
+            errorMessage.classList.remove('hidden');
+            document.getElementById('resultsContainer').classList.remove('hidden');
+            document.getElementById('saveMessage').classList.add('hidden'); // Oculta mensagem de salvar
+        }
+        
+        function displaySaveMessage(message, type) {
+            const saveMessage = document.getElementById('saveMessage');
+            saveMessage.textContent = message;
+            saveMessage.classList.remove('hidden', 'bg-red-100', 'border-red-400', 'text-red-700', 'bg-green-100', 'border-green-400', 'text-green-700', 'bg-gray-100');
+            
+            if (type === 'success') {
+                saveMessage.classList.add('bg-green-100', 'border', 'border-green-400', 'text-green-700');
+            } else if (type === 'error') {
+                saveMessage.classList.add('bg-red-100', 'border', 'border-red-400', 'text-red-700');
+            } else if (type === 'loading') {
+                saveMessage.classList.add('bg-gray-100', 'text-secondary', 'flex', 'items-center', 'justify-center');
+                saveMessage.innerHTML = '<div class="loader mr-3"></div> Salvando análise...';
+            } else {
+                saveMessage.classList.add('bg-gray-100');
+            }
+        }
+
+        // --- 2. Função Principal de Análise (Ajustada para Salvar Resultado) ---
+        window.analyzeData = function() { // Exposta globalmente para o onclick
+            // ... (Lógica de coleta de dados e UI reset) ...
+            const clientName = document.getElementById('clientName').value.trim();
+            const environment = document.getElementById('environment').value.trim();
+            const inputData = document.getElementById('inputData').value;
+            
+            const resultsContainer = document.getElementById('resultsContainer');
+            const detailResults = document.getElementById('detailResults');
+            const summaryTableContainer = document.getElementById('summaryTableContainer');
+            const projectInfo = document.getElementById('projectInfo');
+            const errorMessage = document.getElementById('errorMessage');
+            const saveMessage = document.getElementById('saveMessage');
+
+            detailResults.innerHTML = '<p class="text-gray-500">Nenhum detalhe gerado.</p>';
+            summaryTableContainer.innerHTML = '';
+            projectInfo.innerHTML = '';
+            errorMessage.classList.add('hidden');
+            resultsContainer.classList.add('hidden');
+            saveMessage.classList.add('hidden'); // Limpa a mensagem de salvar
+
+            lastAnalysisResult = null; // Limpa resultado anterior
+
+            const lines = inputData.trim().split('\n');
+            if (lines.length < 2) {
+                displayError("Por favor, cole os dados com o cabeçalho e pelo menos uma linha de metragem válida.");
+                return;
+            }
+
+            const header = lines[0].split('\t').map(h => h.trim());
+            
+            if (!header.includes('CODIGO') || !header.includes('NOME') || !header.includes('METRAGEM_TOTAL(M)')) {
+                displayError("O cabeçalho não contém as colunas 'CODIGO', 'NOME' ou 'METRAGEM_TOTAL(M)'. Por favor, verifique se as colunas estão separadas por TAB.");
+                return;
+            }
+
+            const colIndex = {
+                codigo: header.indexOf('CODIGO'),
+                nome: header.indexOf('NOME'),
+                metragem: header.indexOf('METRAGEM_TOTAL(M)')
+            };
+
+            const totals = {};
+            let totalGeneral22mm = 0;
+            let totalGeneral64mm = 0;
+
+            for (let i = 1; i < lines.length; i++) {
+                const parts = lines[i].split('\t').map(p => p.trim());
+
+                if (parts.length < header.length) continue; 
+
+                const codigo = parts[colIndex.codigo];
+                const nome = parts[colIndex.nome] || 'MATERIAL NÃO IDENTIFICADO';
+                const metragemStr = parts[colIndex.metragem].replace(',', '.'); 
+                const metragem = parseFloat(metragemStr);
+
+                if (isNaN(metragem) || metragem <= 0) continue;
+
+                let widthValue = 0;
+                const match = codigo.match(/X(\d+)/i);
+                
+                if (match && match[1]) {
+                    widthValue = parseInt(match[1], 10);
+                } else if (codigo.toLowerCase().includes('x')) {
+                    continue; 
+                }
+
+                let fitaType;
+                if (widthValue >= 0 && widthValue <= 22) {
+                    fitaType = FITA_22MM;
+                } else if (widthValue >= 23 && widthValue <= 10000) {
+                    fitaType = FITA_64MM;
+                } else {
+                    continue; 
+                }
+
+                if (!totals[nome]) {
+                    totals[nome] = { [FITA_22MM]: 0, [FITA_64MM]: 0 };
+                }
+
+                totals[nome][fitaType] += metragem;
+
+                if (fitaType === FITA_22MM) {
+                    totalGeneral22mm += metragem;
+                } else {
+                    totalGeneral64mm += metragem;
+                }
+            }
+            
+            if (totalGeneral22mm === 0 && totalGeneral64mm === 0) {
+                displayError("Nenhuma linha de metragem válida e classificável foi encontrada. Verifique se o formato 'CODIGO' está correto (Ex: '...X150...') e se as colunas estão separadas por TAB.");
+                return;
+            }
+
+            // 3. Geração do Relatório e Armazenamento do Resultado
+            generateReport(clientName, environment, totals, totalGeneral22mm, totalGeneral64mm, projectInfo, detailResults, summaryTableContainer);
+            
+            // Armazena o resultado para posterior salvamento no Firebase
+            lastAnalysisResult = {
+                client: clientName || 'Não Informado',
+                environment: environment || 'Não Informado',
+                summary: {
+                    rolls22mm: calculateRolls(totalGeneral22mm),
+                    meters22mm: parseFloat(totalGeneral22mm.toFixed(2)),
+                    rolls64mm: calculateRolls(totalGeneral64mm),
+                    meters64mm: parseFloat(totalGeneral64mm.toFixed(2))
+                },
+                details: totals // Detalhamento por material
+            };
+
+            resultsContainer.classList.remove('hidden');
+        }
+
+        // --- 4. Função para Salvar no Firestore ---
+        window.saveToFirebase = async function() { // Exposta globalmente para o onclick
+            if (!currentUserId || !dbInstance) {
+                displaySaveMessage('ERRO: Autenticação pendente. Por favor, aguarde alguns segundos e tente novamente.', 'error');
+                return;
+            }
+
+            if (!lastAnalysisResult) {
+                displaySaveMessage('ERRO: Nenhuma análise para salvar. Clique em "Analisar Metragem" primeiro.', 'error');
+                return;
+            }
+            
+            // Define o caminho para a coleção (dados privados do usuário)
+            const ANALYSES_COLLECTION_PATH = `artifacts/${appId}/users/${currentUserId}/fita_borda_analises`;
+
+            try {
+                displaySaveMessage('Salvando análise...', 'loading');
+                
+                // Salva o documento no Firestore
+                const docRef = await addDoc(collection(dbInstance, ANALYSES_COLLECTION_PATH), {
+                    ...lastAnalysisResult,
+                    userId: currentUserId,
+                    timestamp: serverTimestamp() // Adiciona o carimbo de data/hora do servidor
+                });
+                
+                displaySaveMessage(`✅ Análise salva com sucesso no Firestore! ID: ${docRef.id}`, 'success');
+                lastAnalysisResult = null; // Limpa para evitar salvamento duplicado
+            } catch (error) {
+                console.error("Erro ao salvar dados no Firestore:", error);
+                displaySaveMessage('❌ Erro ao salvar no Firebase: ' + error.message, 'error');
+            }
+        }
+
+        // --- 5. Função de Geração de Relatório (Mantida do código original) ---
+        function generateReport(clientName, environment, totals, totalGeneral22mm, totalGeneral64mm, projectInfo, detailResults, summaryTableContainer) {
+            
+            // --- Info do Projeto ---
+            projectInfo.innerHTML = `
+                <p class="font-semibold text-secondary">Cliente: <span class="font-normal text-gray-700">${clientName || 'N/A'}</span></p>
+                <p class="font-semibold text-secondary">Ambiente: <span class="font-normal text-gray-700">${environment || 'N/A'}</span></p>
+            `;
+
+            // --- Tabela de Resumo Geral ---
+            summaryTableContainer.innerHTML = `
+                <h3 class="text-xl font-semibold text-secondary mb-3">Resumo Geral de Compra (Rolo = ${ROLLO_METERS}m)</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 text-center">
+                    <div class="p-6 bg-blue-50 rounded-xl border-t-4 border-accent shadow-md">
+                        <p class="text-sm font-semibold text-accent uppercase">Fita 22mm</p>
+                        <p class="text-4xl font-extrabold text-secondary mt-1 tracking-tight">
+                            ${calculateRolls(totalGeneral22mm)} Rolos
+                        </p>
+                        <p class="text-md text-gray-600 mt-1">Total: ${totalGeneral22mm.toFixed(2).replace('.', ',')} m</p>
+                    </div>
+                    <div class="p-6 bg-green-50 rounded-xl border-t-4 border-primary shadow-md">
+                        <p class="text-sm font-semibold text-primary uppercase">Fita 64mm</p>
+                        <p class="text-4xl font-extrabold text-secondary mt-1 tracking-tight">
+                            ${calculateRolls(totalGeneral64mm)} Rolos
+                        </p>
+                        <p class="text-md text-gray-600 mt-1">Total: ${totalGeneral64mm.toFixed(2).replace('.', ',')} m</p>
+                    </div>
+                </div>
+            `;
+
+            // --- Detalhamento por Material (Lista de Compras) ---
+            let detailHtml = '';
+            const materials = Object.keys(totals).sort(); 
+            
+            if (materials.length > 0) {
+                detailResults.classList.remove('text-gray-500');
+                detailResults.innerHTML = ''; 
+
+                materials.forEach(nome => {
+                    const data = totals[nome];
+                    const cleanName = nome.trim();
+                    
+                    // Processa 22mm
+                    const totalMeters22mm = data[FITA_22MM];
+                    const rolls22mm = calculateRolls(totalMeters22mm);
+                    
+                    if (totalMeters22mm > 0) {
+                        detailHtml += `
+                            <p class="font-mono text-gray-800 text-lg border-b border-dashed pb-1">
+                                <span class="font-bold text-accent">FB ${FITA_22MM}</span> ${cleanName} - 
+                                <span class="font-extrabold text-secondary">${rolls22mm} RL</span> 
+                                <span class="text-xs text-gray-500 ml-2">(${totalMeters22mm.toFixed(2).replace('.', ',')} m)</span>
+                            </p>
+                        `;
+                    }
+
+                    // Processa 64mm
+                    const totalMeters64mm = data[FITA_64MM];
+                    const rolls64mm = calculateRolls(totalMeters64mm);
+
+                    if (totalMeters64mm > 0) {
+                        detailHtml += `
+                            <p class="font-mono text-gray-800 text-lg border-b border-dashed pb-1">
+                                <span class="font-bold text-primary">FB ${FITA_64MM}</span> ${cleanName} - 
+                                <span class="font-extrabold text-secondary">${rolls64mm} RL</span>
+                                <span class="text-xs text-gray-500 ml-2">(${totalMeters64mm.toFixed(2).replace('.', ',')} m)</span>
+                            </p>
+                        `;
+                    }
+                });
+                detailResults.innerHTML = detailHtml;
+            }
+        }
+    </script>
+</body>
+</html>
