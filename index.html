@@ -4,9 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Analisador de Fita de Borda</title>
-    <!-- Carrega o Tailwind CSS para estilização -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Configuração do Tailwind para usar a fonte Inter e cores personalizadas -->
     <script>
         tailwind.config = {
             theme: {
@@ -62,7 +60,6 @@
             <p class="text-lg text-gray-500 mt-2">Gere a lista de compras e salve no banco de dados.</p>
         </header>
 
-        <!-- Área de Colar Dados e Metadados -->
         <div class="card bg-white p-8 rounded-xl">
             <h2 class="text-2xl font-bold text-secondary mb-6 border-b pb-2">1. Informações e Dados</h2>
             
@@ -81,36 +78,29 @@
             <textarea id="inputData" rows="10" placeholder="Cole todo o conteúdo do seu bloco de notas aqui (incluindo o cabeçalho INDICE, CODIGO, NOME, METRAGEM_TOTAL(M))."
                 class="input-field text-sm font-mono"></textarea>
             
-            <button onclick="analyzeData()" id="analyzeButton"
+            <button id="analyzeButton"
                 class="mt-6 w-full px-6 py-3 bg-primary text-white font-bold text-lg rounded-xl shadow-lg shadow-primary/50 hover:bg-emerald-600 transition duration-300 transform hover:scale-[1.01] focus:outline-none focus:ring-4 focus:ring-primary focus:ring-opacity-50">
                 Analisar Metragem
             </button>
         </div>
 
-        <!-- Área de Resultados -->
         <div id="resultsContainer" class="card bg-white p-8 rounded-xl hidden">
             <h2 class="text-2xl font-bold text-secondary mb-4 border-b pb-2">2. Resultado da Análise</h2>
             
-            <!-- Informações do Projeto (Cliente/Ambiente) -->
             <div id="projectInfo" class="text-lg mb-6 p-4 bg-gray-100 rounded-lg">
-                <!-- Informações do projeto serão inseridas aqui -->
-            </div>
+                </div>
 
             <div id="summaryTableContainer" class="mb-8">
-                <!-- Tabela de resumo geral será inserida aqui -->
-            </div>
+                </div>
 
             <h3 class="text-xl font-bold text-secondary mb-3 mt-6">Lista de Compras (FB = Fita de Bordo, RL = Rolo)</h3>
             <div id="detailResults" class="space-y-3 bg-white p-4 border border-gray-200 rounded-lg">
-                <!-- Detalhes por material e fita serão inseridos aqui -->
-            </div>
+                </div>
             
             <div id="errorMessage" class="hidden mt-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg font-medium" role="alert">
-                <!-- Mensagens de erro serão exibidas aqui -->
-            </div>
+                </div>
             
-            <!-- Botão de Salvar no Firebase -->
-            <button onclick="saveToFirebase()" id="saveButton"
+            <button id="saveButton"
                 class="mt-8 w-full px-6 py-3 bg-save text-white font-bold text-lg rounded-xl shadow-lg shadow-save/50 hover:bg-orange-600 transition duration-300 transform hover:scale-[1.01] focus:outline-none focus:ring-4 focus:ring-save focus:ring-opacity-50 flex items-center justify-center">
                 💾 Salvar Análise no Banco de Dados
             </button>
@@ -120,7 +110,6 @@
         
     </div>
 
-    <!-- Script de Inicialização do Firebase e Lógica da Aplicação -->
     <script type="module">
         // Importa as funções do Firebase (modular V9)
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
@@ -205,8 +194,8 @@
             }
         }
 
-        // --- 2. Função Principal de Análise (Ajustada para Salvar Resultado) ---
-        window.analyzeData = function() { // Exposta globalmente para o onclick
+        // --- 2. Função Principal de Análise (CORREÇÃO: Removido 'window.') ---
+        function analyzeData() { 
             // ... (Lógica de coleta de dados e UI reset) ...
             const clientName = document.getElementById('clientName').value.trim();
             const environment = document.getElementById('environment').value.trim();
@@ -318,8 +307,8 @@
             resultsContainer.classList.remove('hidden');
         }
 
-        // --- 4. Função para Salvar no Firestore ---
-        window.saveToFirebase = async function() { // Exposta globalmente para o onclick
+        // --- 4. Função para Salvar no Firestore (CORREÇÃO: Removido 'window.') ---
+        async function saveToFirebase() { 
             if (!currentUserId || !dbInstance) {
                 displaySaveMessage('ERRO: Autenticação pendente. Por favor, aguarde alguns segundos e tente novamente.', 'error');
                 return;
@@ -351,7 +340,7 @@
             }
         }
 
-        // --- 5. Função de Geração de Relatório (Mantida do código original) ---
+        // --- 5. Função de Geração de Relatório (Sem alterações) ---
         function generateReport(clientName, environment, totals, totalGeneral22mm, totalGeneral64mm, projectInfo, detailResults, summaryTableContainer) {
             
             // --- Info do Projeto ---
@@ -424,6 +413,26 @@
                 detailResults.innerHTML = detailHtml;
             }
         }
+
+        // --- 6. Inicialização dos Eventos (CORREÇÃO DO PROBLEMA) ---
+        // Anexa as funções aos botões após o DOM carregar.
+        document.addEventListener('DOMContentLoaded', () => {
+            const analyzeButton = document.getElementById('analyzeButton');
+            const saveButton = document.getElementById('saveButton');
+            
+            if (analyzeButton) {
+                analyzeButton.addEventListener('click', analyzeData);
+            } else {
+                console.error("Erro: Botão de Análise não encontrado.");
+            }
+            
+            if (saveButton) {
+                saveButton.addEventListener('click', saveToFirebase);
+            } else {
+                console.error("Erro: Botão de Salvar não encontrado.");
+            }
+        });
+
     </script>
 </body>
 </html>
